@@ -291,3 +291,31 @@ def test_container_model_load_exists_and_can_be_called():
     assert callable(getattr(ContainerModel, "load", None))
     assert isinstance(ContainerModel.load(CFG), ContainerModel)
     assert ContainerModel.load(Path(CFG)) == ContainerModel.load(CFG)
+
+
+@pytest.mark.parametrize(
+    "dotted, bad, want",
+    [
+        ("dims", [0.1, 0.1], "three numbers"),
+        ("dims", "abc", "three numbers"),
+        ("lid_dims", None, "three numbers"),
+        ("button_offset", 0.1, "three numbers"),
+        ("press_attitude_rpy_deg", [180.0, 0.0, "ninety"], "three numbers"),
+        ("hover_standoff", "high", "a number"),
+        ("press.touch_nm", None, "a number"),
+    ],
+)
+def test_load_called_on_a_wrongly_shaped_field_names_the_file_and_field(tmp_path, dotted, bad, want):
+    """Calling load on a config whose required field is there but the wrong
+    shape: a two-value dims used to load without a word, 'dims: abc' loaded
+    as ('a', 'b', 'c'), and the rest died as a bare TypeError."""
+    raw = yaml.safe_load(open(CFG))
+    *parents, leaf = dotted.split(".")
+    node = raw
+    for p in parents:
+        node = node[p]
+    node[leaf] = bad
+    broken = tmp_path / "broken.yaml"
+    broken.write_text(yaml.safe_dump(raw))
+    with pytest.raises(ValueError, match=re.escape("%s: field '%s' must be" % (broken, dotted)) + ".*" + want):
+        ContainerModel.load(str(broken))

@@ -17,6 +17,10 @@ from rammp_box_opening.geometry import euler_deg_to_quat_xyzw, yaw_about_world_z
 from rammp_box_opening.constants import TRANSIT_SPEED
 
 
+def _is_number(v):
+    return isinstance(v, (int, float)) and not isinstance(v, bool)
+
+
 @dataclass(frozen=True)
 class ContainerPose:
     xyz: tuple
@@ -65,6 +69,15 @@ class ContainerModel:
             raise ValueError("%s: field 'press' must be a mapping (with touch_nm)" % path)
         if "touch_nm" not in raw["press"]:
             raise ValueError("%s: missing required field 'press.touch_nm'" % path)
+        # ...and the field whose value has the wrong shape: a two-value dims
+        # used to load silently, and 'dims: abc' loaded as ('a', 'b', 'c')
+        for key in ("dims", "lid_dims", "button_offset", "press_attitude_rpy_deg"):
+            v = raw[key]
+            if not isinstance(v, (list, tuple)) or len(v) != 3 or not all(_is_number(x) for x in v):
+                raise ValueError("%s: field '%s' must be a list of three numbers, got %r" % (path, key, v))
+        for name, v in (("hover_standoff", raw["hover_standoff"]), ("press.touch_nm", raw["press"]["touch_nm"])):
+            if not _is_number(v):
+                raise ValueError("%s: field '%s' must be a number, got %r" % (path, name, v))
         return cls(
             dims=tuple(raw["dims"]),
             lid_dims=tuple(raw["lid_dims"]),
