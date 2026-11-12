@@ -279,3 +279,15 @@ def test_an_empty_or_malformed_container_config_is_a_clear_error(tmp_path):
     flat.write_text(yaml.safe_dump(raw))
     with pytest.raises(ValueError, match=re.escape(str(flat)) + ".*'press' must be a mapping"):
         ContainerModel.load(str(flat))
+
+
+def test_container_model_load_exists_and_can_be_called():
+    """The smallest promise the rest of the package leans on: there is a
+    ContainerModel.load, it is callable on the class itself (no instance
+    needed), and handing it a shipped config — as a string or a Path —
+    gives back a ContainerModel."""
+    from pathlib import Path
+
+    assert callable(getattr(ContainerModel, "load", None))
+    assert isinstance(ContainerModel.load(CFG), ContainerModel)
+    assert ContainerModel.load(Path(CFG)) == ContainerModel.load(CFG)
