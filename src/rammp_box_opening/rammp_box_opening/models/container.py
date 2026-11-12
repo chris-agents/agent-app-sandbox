@@ -73,11 +73,18 @@ class ContainerModel:
         # used to load silently, and 'dims: abc' loaded as ('a', 'b', 'c')
         for key in ("dims", "lid_dims", "button_offset", "press_attitude_rpy_deg"):
             v = raw[key]
-            if not isinstance(v, (list, tuple)) or len(v) != 3 or not all(_is_number(x) for x in v):
-                raise ValueError("%s: field '%s' must be a list of three numbers, got %r" % (path, key, v))
-        for name, v in (("hover_standoff", raw["hover_standoff"]), ("press.touch_nm", raw["press"]["touch_nm"])):
+            is_triple = isinstance(v, (list, tuple)) and len(v) == 3
+            if not is_triple or not all(_is_number(x) for x in v):
+                msg = "%s: field '%s' must be a list of three numbers, got %r"
+                raise ValueError(msg % (path, key, v))
+        numbers = {
+            "hover_standoff": raw["hover_standoff"],
+            "press.touch_nm": raw["press"]["touch_nm"],
+        }
+        for name, v in numbers.items():
             if not _is_number(v):
-                raise ValueError("%s: field '%s' must be a number, got %r" % (path, name, v))
+                msg = "%s: field '%s' must be a number, got %r"
+                raise ValueError(msg % (path, name, v))
         return cls(
             dims=tuple(raw["dims"]),
             lid_dims=tuple(raw["lid_dims"]),

@@ -305,7 +305,9 @@ def test_container_model_load_exists_and_can_be_called():
         ("press.touch_nm", None, "a number"),
     ],
 )
-def test_load_called_on_a_wrongly_shaped_field_names_the_file_and_field(tmp_path, dotted, bad, want):
+def test_load_called_on_a_wrongly_shaped_field_names_the_file_and_field(
+    tmp_path, dotted, bad, want
+):
     """Calling load on a config whose required field is there but the wrong
     shape: a two-value dims used to load without a word, 'dims: abc' loaded
     as ('a', 'b', 'c'), and the rest died as a bare TypeError."""
@@ -317,5 +319,6 @@ def test_load_called_on_a_wrongly_shaped_field_names_the_file_and_field(tmp_path
     node[leaf] = bad
     broken = tmp_path / "broken.yaml"
     broken.write_text(yaml.safe_dump(raw))
-    with pytest.raises(ValueError, match=re.escape("%s: field '%s' must be" % (broken, dotted)) + ".*" + want):
+    named = re.escape("%s: field '%s' must be" % (broken, dotted))
+    with pytest.raises(ValueError, match=named + ".*" + want):
         ContainerModel.load(str(broken))
